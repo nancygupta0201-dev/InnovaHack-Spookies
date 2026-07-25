@@ -130,7 +130,7 @@ export default function OngoingInterview({
       formData.append("response_time_seconds", responseTime.toFixed(2));
       formData.append("gesture_data", JSON.stringify(gestureData));
 
-      const res = await fetch("http://localhost:8000/agent_reply", {
+      const res = await fetch("https://innovahack-spookies.onrender.com", {
         method: "POST",
         body: formData,
       });
