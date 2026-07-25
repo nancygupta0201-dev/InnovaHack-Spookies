@@ -3,7 +3,7 @@ import os
 import uuid
 from datetime import datetime
 from typing import Dict, Any, Optional
-import json 
+import json
 
 from dotenv import load_dotenv
 from pypdf import PdfReader
@@ -210,7 +210,8 @@ async def start_interview(
     job_title: str = Form(...),
 ):
     """Called once, at the very start. Uploads the CV + job title, runs the
-    CV analysis, and returns the greeting as the first question."""
+    CV analysis, and returns both the CV analysis (so the candidate can see
+    any issues upfront) and the greeting as the first question."""
     pdf_bytes = await file.read()
     adk_user_id = str(uuid.uuid4())
 
@@ -240,6 +241,7 @@ async def start_interview(
     return {
         "session_id": our_session_id,
         "question": final_session.state.get("question"),  # the greeting
+        "cv_analysis": final_session.state.get("candidate_result"),  # let the candidate see CV issues upfront
     }
 
 
@@ -250,6 +252,8 @@ async def agent_reply(
     response_time_seconds: float = Form(...),
     gesture_data: str = Form(default="{}"),  # JSON string from the frontend
 ):
+    """Called for every subsequent turn. `answer` is the candidate's reply
+    to whatever question they were last given (the greeting, on turn 1)."""
     adk_user_id = SESSION_REGISTRY.get(session_id)
     if not adk_user_id:
         return {"error": "Unknown or expired session_id."}
@@ -259,6 +263,10 @@ async def agent_reply(
     except json.JSONDecodeError:
         gesture_data_dict = {}
 
+    # Fetch the existing session for this user. ADK's InMemorySessionService
+    # keys sessions by app_name + user_id + session.id; since the frontend
+    # only holds our own session_id (mapped to adk_user_id), look up the
+    # one session that belongs to that user.
     sessions = await session_service.list_sessions(app_name=APP_NAME, user_id=adk_user_id)
     adk_session = sessions.sessions[0]
 
