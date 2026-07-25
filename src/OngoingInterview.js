@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { ImageIcon } from "lucide-react";
+import { ImageIcon, X, Send } from "lucide-react";
 import useVantaHalo from "./useVantaHalo";
 
 const DEMO_TRANSCRIPT = `Interviewer: Hello! Welcome to your AI interview session. Can you start by introducing yourself?
@@ -25,35 +25,46 @@ export default function OngoingInterview({ setPage }) {
   const vantaRef = useVantaHalo();
   const videoRef = useRef(null);
   const streamRef = useRef(null);
+  const chatEndRef = useRef(null);
   const [showPopup, setShowPopup] = useState(true);
   const [mediaError, setMediaError] = useState(null);
   const [elapsed, setElapsed] = useState(0);
   const timerRef = useRef(null);
+  const [chatOpen, setChatOpen] = useState(false);
+  const [messages, setMessages] = useState([
+    { from: "ai", text: "Give your answer here." }
+  ]);
+  const [input, setInput] = useState("");
 
   const startMedia = async () => {
     setShowPopup(false);
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: true,
-        audio: true,
-      });
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
       streamRef.current = stream;
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-      }
-      timerRef.current = setInterval(() => {
-        setElapsed((prev) => prev + 1);
-      }, 1000);
+      if (videoRef.current) videoRef.current.srcObject = stream;
+      timerRef.current = setInterval(() => setElapsed((prev) => prev + 1), 1000);
     } catch (err) {
       setMediaError("Could not access camera or microphone. Please check your permissions.");
     }
   };
 
+  const sendMessage = () => {
+    if (!input.trim()) return;
+    setMessages((prev) => [...prev, { from: "user", text: input.trim() }]);
+    setInput("");
+    // Demo reply — replace with real agent later
+    setTimeout(() => {
+      setMessages((prev) => [...prev, { from: "ai", text: "Got it! Keep going, you're doing great." }]);
+    }, 800);
+  };
+
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
   useEffect(() => {
     return () => {
-      if (streamRef.current) {
-        streamRef.current.getTracks().forEach((track) => track.stop());
-      }
+      if (streamRef.current) streamRef.current.getTracks().forEach((track) => track.stop());
       if (timerRef.current) clearInterval(timerRef.current);
     };
   }, []);
@@ -61,10 +72,8 @@ export default function OngoingInterview({ setPage }) {
   return (
     <div style={{ position: "relative", minHeight: "100vh" }}>
 
-      {/* Vanta background — fixed behind everything */}
       <div ref={vantaRef} style={{ position: "fixed", top: 0, left: 0, width: "100%", height: "100%", zIndex: 0 }} />
 
-      {/* Content layer */}
       <div style={{ position: "relative", zIndex: 1 }} className="min-h-screen flex flex-col px-6 py-16">
 
         {/* Recording alert popup */}
@@ -125,7 +134,7 @@ export default function OngoingInterview({ setPage }) {
             </button>
           </div>
 
-          {/* Right — Image/GIF placeholder */}
+          {/* Right — Interviewer + stats + chat */}
           <div className="flex flex-col gap-3">
             <h2 className="text-sm font-medium text-white/70 uppercase tracking-wide">Interviewer</h2>
             <div className="w-full rounded-xl border border-dashed border-white/30 bg-white/10 flex items-center justify-center" style={{ minHeight: "300px" }}>
@@ -141,9 +150,50 @@ export default function OngoingInterview({ setPage }) {
                 <p className="text-white/70 text-sm tracking-widest font-mono">0</p>
               </div>
             </div>
-            <button className="mt-2 px-6 h-10 rounded-md text-sm font-medium bg-white/10 border border-white/20 text-white hover:bg-white/20 transition-colors">
+            <button
+              onClick={() => setChatOpen((prev) => !prev)}
+              className="mt-2 px-6 h-10 rounded-md text-sm font-medium bg-white/10 border border-white/20 text-white hover:bg-white/20 transition-colors"
+            >
               Chat
             </button>
+
+            {/* Chatbox */}
+            {chatOpen && (
+              <div className="rounded-xl border border-white/20 bg-white/10 backdrop-blur-sm flex flex-col overflow-hidden" style={{ height: "300px" }}>
+                {/* Header */}
+                <div className="flex items-center justify-between px-4 py-2 border-b border-white/10">
+                  <span className="text-sm font-medium text-white">Chat</span>
+                  <button onClick={() => setChatOpen(false)}>
+                    <X size={16} className="text-white/50 hover:text-white" />
+                  </button>
+                </div>
+
+                {/* Messages */}
+                <div className="flex-1 overflow-y-auto px-4 py-3 flex flex-col gap-2">
+                  {messages.map((msg, i) => (
+                    <div key={i} className={`text-sm px-3 py-2 rounded-lg max-w-[85%] ${msg.from === "user" ? "bg-white text-stone-900 self-end" : "bg-white/20 text-white self-start"}`}>
+                      {msg.text}
+                    </div>
+                  ))}
+                  <div ref={chatEndRef} />
+                </div>
+
+                {/* Input */}
+                <div className="flex items-center gap-2 px-3 py-2 border-t border-white/10">
+                  <input
+                    type="text"
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && sendMessage()}
+                    placeholder="Type a message..."
+                    className="flex-1 bg-transparent text-sm text-white placeholder-white/30 outline-none"
+                  />
+                  <button onClick={sendMessage}>
+                    <Send size={16} className="text-white/50 hover:text-white" />
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
 
         </div>

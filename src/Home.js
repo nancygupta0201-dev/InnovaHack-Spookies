@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { ImageIcon, Upload } from "lucide-react";
+import { Upload } from "lucide-react";
 import useVantaHalo from "./useVantaHalo";
 
 const STEPS = [
@@ -20,11 +20,7 @@ const STEPS = [
   },
 ];
 
-async function sendToResumeAnalysisAgent(file) {
-  console.log("Sending to resume analysis agent:", file.name);
-}
-
-export default function Home({ setPage }) {
+export default function Home({ setPage, setAnalysisResult }) {
   const vantaRef = useVantaHalo();
   const fileInputRef = useRef(null);
   const [status, setStatus] = useState("idle");
@@ -37,7 +33,7 @@ export default function Home({ setPage }) {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.type !== "application/pdf") {
+    if (!file.type.includes("pdf") && !file.name.endsWith(".pdf")) {
       setStatus("error");
       return;
     }
@@ -45,10 +41,19 @@ export default function Home({ setPage }) {
     setStatus("sending");
 
     try {
-      await sendToResumeAnalysisAgent(file);
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const res = await fetch("http://localhost:8000/analyze-pdf", {
+        method: "POST",
+        body: formData,
+      });
+
+      const data = await res.json();
+      setAnalysisResult(data);
       setPage("interview");
     } catch (err) {
-      console.error(err);
+      console.error("Upload failed:", err);
       setStatus("error");
     } finally {
       e.target.value = "";
@@ -61,11 +66,9 @@ export default function Home({ setPage }) {
 
       <div style={{ position: "relative", zIndex: 1 }} className="min-h-screen px-6 py-16">
 
-        {/* Tutorial heading */}
         <h1 className="text-3xl font-semibold text-white mb-2">Tutorial</h1>
         <p className="text-white/50 text-sm mb-10">Follow these steps to get started</p>
 
-        {/* Steps */}
         <div className="flex flex-col gap-6 mb-16">
           {STEPS.map((step) => (
             <div key={step.number} className="flex gap-5 items-start rounded-xl border border-white/20 bg-white/10 backdrop-blur-sm p-5">
@@ -78,7 +81,6 @@ export default function Home({ setPage }) {
           ))}
         </div>
 
-        {/* Image placeholder + Upload button side by side */}
         <div className="flex items-center gap-8">
           <div className="w-48 shrink-0 rounded-xl overflow-hidden">
             <img src="/resumeimage.avif" alt="Resume" className="w-full h-auto object-contain" />
@@ -93,10 +95,10 @@ export default function Home({ setPage }) {
               className="flex items-center gap-2 px-4 h-10 rounded-md text-sm font-medium bg-white text-stone-900 hover:bg-white/90 transition-colors w-fit"
             >
               <Upload size={16} />
-              {status === "sending" ? "Sending…" : "Upload resume"}
+              {status === "sending" ? "Processing..." : "Upload resume"}
             </button>
             {status === "error" && (
-              <p className="text-sm text-red-400">Please upload a PDF file.</p>
+              <p className="text-sm text-red-400">Upload failed or invalid file. Please try again.</p>
             )}
           </div>
         </div>

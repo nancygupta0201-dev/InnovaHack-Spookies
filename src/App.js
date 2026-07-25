@@ -6,16 +6,17 @@ import Interview from "./Interview";
 import OngoingInterview from "./OngoingInterview";
 import AnalysisPage from "./AnalysisPage";
 
-const PAGES = {
-  home: (props) => <Home {...props} />,
-  about: () => <About />,
-  interview: (props) => <Interview {...props} />,
-  ongoingInterview: (props) => <OngoingInterview {...props} />,
-  analysisPage: (props) => <AnalysisPage {...props} />,
-};
-
 export default function App() {
   const [page, setPage] = useState("home");
+  const [analysisResult, setAnalysisResult] = useState(null);
+
+  const PAGES = {
+    home: (props) => <Home {...props} setAnalysisResult={setAnalysisResult} />,
+    about: () => <About />,
+    interview: (props) => <Interview {...props} analysisResult={analysisResult} />,
+    ongoingInterview: (props) => <OngoingInterview {...props} />,
+    analysisPage: (props) => <AnalysisPage {...props} />,
+  };
 
   const PageComponent = PAGES[page] ?? PAGES.home;
 
