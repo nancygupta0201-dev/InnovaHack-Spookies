@@ -1,7 +1,17 @@
 import useVantaHalo from "./useVantaHalo";
 
-export default function AnalysisPage({ setPage }) {
+function average(arr, key) {
+  if (!arr.length) return 0;
+  return arr.reduce((acc, item) => acc + (item[key] ?? 0), 0) / arr.length;
+}
+
+export default function AnalysisPage({ setPage, answerAnalyses = [] }) {
   const vantaRef = useVantaHalo();
+
+  const avgScore = average(answerAnalyses, "score");
+  const avgConfidence = average(answerAnalyses, "confidence_score");
+  const avgFluency = average(answerAnalyses, "fluency_score");
+  const overallScore = Math.round(avgScore * 10); // backend score is /10, display as /100
 
   return (
     <div style={{ position: "relative", minHeight: "100vh" }}>
@@ -15,40 +25,40 @@ export default function AnalysisPage({ setPage }) {
           {/* Overall score */}
           <div className="col-span-2 rounded-xl border border-white/20 bg-white/10 backdrop-blur-sm p-6 text-center">
             <p className="text-white/50 text-xs uppercase tracking-wide mb-1">Overall score</p>
-            <p className="text-5xl font-semibold text-white">78<span className="text-2xl text-white/50">/100</span></p>
+            <p className="text-5xl font-semibold text-white">{overallScore}<span className="text-2xl text-white/50">/100</span></p>
           </div>
 
-          {/* Communication */}
+          {/* Confidence */}
           <div className="rounded-xl border border-white/20 bg-white/10 backdrop-blur-sm p-5">
-            <p className="text-white/50 text-xs uppercase tracking-wide mb-1">Communication</p>
-            <p className="text-2xl font-semibold text-white mb-2">82/100</p>
-            <p className="text-sm text-white/70 leading-relaxed">Clear and structured responses. Could improve on conciseness in longer answers.</p>
+            <p className="text-white/50 text-xs uppercase tracking-wide mb-1">Confidence</p>
+            <p className="text-2xl font-semibold text-white mb-2">{Math.round(avgConfidence * 10)}/100</p>
+            <p className="text-sm text-white/70 leading-relaxed">Average confidence across all answers.</p>
           </div>
 
-          {/* Technical knowledge */}
+          {/* Fluency */}
           <div className="rounded-xl border border-white/20 bg-white/10 backdrop-blur-sm p-5">
-            <p className="text-white/50 text-xs uppercase tracking-wide mb-1">Technical knowledge</p>
-            <p className="text-2xl font-semibold text-white mb-2">75/100</p>
-            <p className="text-sm text-white/70 leading-relaxed">Good grasp of core concepts. Some gaps in system design and scalability topics.</p>
+            <p className="text-white/50 text-xs uppercase tracking-wide mb-1">Fluency</p>
+            <p className="text-2xl font-semibold text-white mb-2">{Math.round(avgFluency * 10)}/100</p>
+            <p className="text-sm text-white/70 leading-relaxed">Average fluency across all answers.</p>
           </div>
 
-          {/* Strengths */}
+          {/* Issues */}
           <div className="rounded-xl border border-white/20 bg-white/10 backdrop-blur-sm p-5">
-            <p className="text-white/50 text-xs uppercase tracking-wide mb-2">Strengths</p>
+            <p className="text-white/50 text-xs uppercase tracking-wide mb-2">Issues</p>
             <ul className="text-sm text-white/70 leading-relaxed space-y-1">
-              <li>— Strong problem-solving approach</li>
-              <li>— Good use of real-world examples</li>
-              <li>— Confident delivery</li>
+              {answerAnalyses.flatMap((a) => a.issues ?? []).map((issue, i) => (
+                <li key={i}>— {issue}</li>
+              ))}
             </ul>
           </div>
 
-          {/* Areas to improve */}
+          {/* Suggested fixes */}
           <div className="rounded-xl border border-white/20 bg-white/10 backdrop-blur-sm p-5">
-            <p className="text-white/50 text-xs uppercase tracking-wide mb-2">Areas to improve</p>
+            <p className="text-white/50 text-xs uppercase tracking-wide mb-2">Suggested fixes</p>
             <ul className="text-sm text-white/70 leading-relaxed space-y-1">
-              <li>— Be more concise under time pressure</li>
-              <li>— Deeper knowledge of distributed systems</li>
-              <li>— Ask clarifying questions before answering</li>
+              {answerAnalyses.filter((a) => a.possible_fix).map((a, i) => (
+                <li key={i}>— {a.possible_fix}</li>
+              ))}
             </ul>
           </div>
 

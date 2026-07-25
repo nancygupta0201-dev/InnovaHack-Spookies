@@ -20,12 +20,17 @@ const STEPS = [
   },
 ];
 
-export default function Home({ setPage, setAnalysisResult }) {
+export default function Home({ setPage, setSessionData }) {
   const vantaRef = useVantaHalo();
   const fileInputRef = useRef(null);
   const [status, setStatus] = useState("idle");
+  const [jobTitle, setJobTitle] = useState("");
 
   const handleUploadClick = () => {
+    if (!jobTitle.trim()) {
+      alert("Please enter a job title before uploading.");
+      return;
+    }
     fileInputRef.current?.click();
   };
 
@@ -43,15 +48,17 @@ export default function Home({ setPage, setAnalysisResult }) {
     try {
       const formData = new FormData();
       formData.append("file", file);
+      formData.append("job_title", jobTitle.trim());
 
-      const res = await fetch("http://localhost:8000/analyze-pdf", {
+      const res = await fetch("http://localhost:8000/start_interview", {
         method: "POST",
         body: formData,
       });
 
       const data = await res.json();
-      setAnalysisResult(data);
-      setPage("interview");
+      // data = { session_id, question (greeting) }
+      setSessionData({ sessionId: data.session_id, firstQuestion: data.question });
+      setPage("ongoingInterview");
     } catch (err) {
       console.error("Upload failed:", err);
       setStatus("error");
@@ -88,8 +95,15 @@ export default function Home({ setPage, setAnalysisResult }) {
 
           <div className="flex flex-col gap-3">
             <p className="text-white/70 text-sm leading-relaxed">
-              Ready to get started? Upload your resume and let the AI do the rest.
+              Ready to get started? Enter the job title and upload your resume.
             </p>
+            <input
+              type="text"
+              value={jobTitle}
+              onChange={(e) => setJobTitle(e.target.value)}
+              placeholder="Job title (e.g. Software Engineer)"
+              className="px-3 h-10 rounded-md text-sm bg-white/10 border border-white/20 text-white placeholder-white/30 outline-none focus:border-white/50"
+            />
             <button
               onClick={handleUploadClick}
               className="flex items-center gap-2 px-4 h-10 rounded-md text-sm font-medium bg-white text-stone-900 hover:bg-white/90 transition-colors w-fit"

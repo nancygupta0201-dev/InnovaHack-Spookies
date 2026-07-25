@@ -8,14 +8,29 @@ import AnalysisPage from "./AnalysisPage";
 
 export default function App() {
   const [page, setPage] = useState("home");
-  const [analysisResult, setAnalysisResult] = useState(null);
+  const [sessionData, setSessionData] = useState(null);
+  const [answerAnalyses, setAnswerAnalyses] = useState([]);
+
+  const handleSetSessionData = (data) => {
+    setAnswerAnalyses([]);
+    setSessionData(data);
+  };
 
   const PAGES = {
-    home: (props) => <Home {...props} setAnalysisResult={setAnalysisResult} />,
+    home: (props) => <Home {...props} setSessionData={handleSetSessionData} />,
     about: () => <About />,
-    interview: (props) => <Interview {...props} analysisResult={analysisResult} />,
-    ongoingInterview: (props) => <OngoingInterview {...props} />,
-    analysisPage: (props) => <AnalysisPage {...props} />,
+    interview: (props) => <Interview {...props} sessionData={sessionData} />,
+    ongoingInterview: (props) => (
+      <OngoingInterview
+        {...props}
+        sessionData={sessionData}
+        answerAnalyses={answerAnalyses}
+        setAnswerAnalyses={setAnswerAnalyses}
+      />
+    ),
+    analysisPage: (props) => (
+      <AnalysisPage {...props} answerAnalyses={answerAnalyses} />
+    ),
   };
 
   const PageComponent = PAGES[page] ?? PAGES.home;
