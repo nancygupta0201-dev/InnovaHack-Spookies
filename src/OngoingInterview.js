@@ -3,6 +3,7 @@ import { X, Send } from "lucide-react";
 import useVantaHalo from "./useVantaHalo";
 import useGestureCapture from "./useGestureCapture";
 import useSpeechRecognition from "./useSpeechRecognition";
+import useTextToSpeech from "./useTextToSpeech";
 
 function formatTime(seconds) {
   const h = Math.floor(seconds / 3600);
@@ -70,9 +71,11 @@ export default function OngoingInterview({
 
   const { startGestureCapture, stopGestureCapture } = useGestureCapture();
 
-  const { start: startListening, stop: stopListening, isListening, transcript: liveTranscript } = useSpeechRecognition({
+  const { start: startListening, stop: stopListening, isListening, transcript: liveTranscript, reset: resetTranscript, error: micError } = useSpeechRecognition({
     onResult: () => {},
   });
+
+  const { speak, stop: stopSpeaking, rate, setRate } = useTextToSpeech();
 
   const startMedia = async () => {
     if (mediaStarted.current) return;
@@ -152,6 +155,7 @@ export default function OngoingInterview({
         setPendingQuestion(data.next_question);
         setTranscript((prev) => [...prev, { role: "interviewer", text: data.next_question }]);
         setQuestionCount((prev) => prev + 1);
+        speak(data.next_question);
         answerStartTime.current = performance.now();
         await startGestureCapture(videoRef.current);
         startListening();
@@ -209,7 +213,10 @@ export default function OngoingInterview({
                 This interview session will use your camera and microphone. By continuing, you consent to being recorded for the duration of the interview.
               </p>
               <button
-                onClick={startMedia}
+                onClick={() => {
+                  speak(sessionData?.firstQuestion); // fire synchronously, right on the click
+                  startMedia();
+                }}
                 className="w-full h-10 rounded-md text-sm font-medium bg-stone-900 text-white hover:bg-stone-800 transition-colors"
               >
                 I understand, continue
@@ -270,6 +277,7 @@ export default function OngoingInterview({
                 if (timerRef.current) clearInterval(timerRef.current);
                 stopListening();
                 stopGestureCapture();
+                stopSpeaking();
                 setPage("analysisPage");
               }}
               className="mt-2 px-6 h-10 rounded-md text-sm font-medium bg-red-500 text-white hover:bg-red-600 transition-colors"
@@ -287,6 +295,19 @@ export default function OngoingInterview({
                 <p className="text-white/50 text-xs uppercase tracking-wide mb-1">Questions</p>
                 <p className="text-white/70 text-sm tracking-widest font-mono">{questionCount}</p>
               </div>
+            </div>
+            <div className="w-full flex items-center gap-2">
+              <span className="text-xs text-white/50 shrink-0">Voice speed</span>
+              <input
+                type="range"
+                min="0.5"
+                max="2"
+                step="0.1"
+                value={rate}
+                onChange={(e) => setRate(parseFloat(e.target.value))}
+                className="flex-1"
+              />
+              <span className="text-xs text-white/50 w-8 text-right">{rate.toFixed(1)}x</span>
             </div>
             <button
               onClick={() => setChatOpen((prev) => !prev)}
@@ -351,6 +372,24 @@ export default function OngoingInterview({
                         <ScoreBar label="Score" value={item.analysis.score} />
                         <ScoreBar label="Confidence" value={item.analysis.confidence_score} />
                         <ScoreBar label="Fluency" value={item.analysis.fluency_score} />
+
+                        {item.analysis.issues?.length > 0 && (
+                          <div className="pt-1">
+                            <p className="text-xs uppercase tracking-wide text-white/40 mb-1">Issues</p>
+                            <ul className="text-sm text-white/70 leading-relaxed space-y-1">
+                              {item.analysis.issues.map((issue, idx) => (
+                                <li key={idx}>— {issue}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+
+                        {item.analysis.possible_fix && (
+                          <div className="pt-1">
+                            <p className="text-xs uppercase tracking-wide text-white/40 mb-1">Suggested fix</p>
+                            <p className="text-sm text-white/70 leading-relaxed">{item.analysis.possible_fix}</p>
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>

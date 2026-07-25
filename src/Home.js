@@ -56,9 +56,13 @@ export default function Home({ setPage, setSessionData }) {
       });
 
       const data = await res.json();
-      // data = { session_id, question (greeting) }
-      setSessionData({ sessionId: data.session_id, firstQuestion: data.question });
-      setPage("ongoingInterview");
+      // data = { session_id, question (greeting), cv_analysis }
+      setSessionData({
+        sessionId: data.session_id,
+        firstQuestion: data.question,
+        cvAnalysis: data.cv_analysis || null,
+      });
+      setPage("interview");
     } catch (err) {
       console.error("Upload failed:", err);
       setStatus("error");

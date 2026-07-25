@@ -16,33 +16,40 @@ export default function App() {
     setSessionData(data);
   };
 
-  const PAGES = {
-    home: (props) => <Home {...props} setSessionData={handleSetSessionData} />,
-    about: () => <About />,
-    interview: (props) => <Interview {...props} sessionData={sessionData} />,
-    ongoingInterview: (props) => (
-      <OngoingInterview
-        {...props}
-        sessionData={sessionData}
-        answerAnalyses={answerAnalyses}
-        setAnswerAnalyses={setAnswerAnalyses}
-      />
-    ),
-    analysisPage: (props) => (
-      <AnalysisPage {...props} answerAnalyses={answerAnalyses} />
-    ),
-  };
-
-  const PageComponent = PAGES[page] ?? PAGES.home;
+  let content;
+  switch (page) {
+    case "home":
+      content = <Home setPage={setPage} setSessionData={handleSetSessionData} />;
+      break;
+    case "about":
+      content = <About />;
+      break;
+    case "interview":
+      content = <Interview setPage={setPage} sessionData={sessionData} />;
+      break;
+    case "ongoingInterview":
+      content = (
+        <OngoingInterview
+          setPage={setPage}
+          sessionData={sessionData}
+          answerAnalyses={answerAnalyses}
+          setAnswerAnalyses={setAnswerAnalyses}
+        />
+      );
+      break;
+    case "analysisPage":
+      content = <AnalysisPage setPage={setPage} answerAnalyses={answerAnalyses} />;
+      break;
+    default:
+      content = <Home setPage={setPage} setSessionData={handleSetSessionData} />;
+  }
 
   return (
     <div className="min-h-screen">
       <div style={{ position: "relative", zIndex: 10 }}>
         <Headbar page={page} setPage={setPage} />
       </div>
-      <main>
-        <PageComponent setPage={setPage} />
-      </main>
+      <main>{content}</main>
     </div>
   );
 }
