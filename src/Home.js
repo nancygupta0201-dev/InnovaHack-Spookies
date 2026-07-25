@@ -50,7 +50,7 @@ export default function Home({ setPage, setSessionData }) {
       formData.append("file", file);
       formData.append("job_title", jobTitle.trim());
 
-      const res = await fetch("http://localhost:8000/start_interview", {
+      const res = await fetch("https://innovahack-spookies.onrender.com", {
         method: "POST",
         body: formData,
       });
