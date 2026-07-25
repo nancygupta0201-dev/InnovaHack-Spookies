@@ -1,25 +1,32 @@
-import logo from './logo.svg';
-import './App.css';
+import { useState } from "react";
+import Headbar from "./Headbar";
+import Home from "./Home";
+import About from "./About";
+import Interview from "./Interview";
+import OngoingInterview from "./OngoingInterview";
+import AnalysisPage from "./AnalysisPage";
 
-function App() {
+const PAGES = {
+  home: (props) => <Home {...props} />,
+  about: () => <About />,
+  interview: (props) => <Interview {...props} />,
+  ongoingInterview: (props) => <OngoingInterview {...props} />,
+  analysisPage: (props) => <AnalysisPage {...props} />,
+};
+
+export default function App() {
+  const [page, setPage] = useState("home");
+
+  const PageComponent = PAGES[page] ?? PAGES.home;
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+    <div className="min-h-screen">
+      <div style={{ position: "relative", zIndex: 10 }}>
+        <Headbar page={page} setPage={setPage} />
+      </div>
+      <main>
+        <PageComponent setPage={setPage} />
+      </main>
     </div>
   );
 }
-
-export default App;
