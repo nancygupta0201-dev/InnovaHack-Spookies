@@ -1,7 +1,7 @@
 import { useRef, useState } from "react";
 import { Upload } from "lucide-react";
 import useVantaHalo from "./useVantaHalo";
-import { API_BASE_URL } from "./config";
+import { API_BASE_URL } from "./Config";
 
 const STEPS = [
   {
