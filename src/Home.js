@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import { Upload } from "lucide-react";
 import useVantaHalo from "./useVantaHalo";
+import { API_BASE_URL } from "./config";
 
 const STEPS = [
   {
@@ -50,7 +51,7 @@ export default function Home({ setPage, setSessionData }) {
       formData.append("file", file);
       formData.append("job_title", jobTitle.trim());
 
-      const res = await fetch("https://innovahack-spookies.onrender.com", {
+      const res = await fetch(`${API_BASE_URL}/start_interview`, {
         method: "POST",
         body: formData,
       });
