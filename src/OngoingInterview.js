@@ -4,6 +4,7 @@ import useVantaHalo from "./useVantaHalo";
 import useGestureCapture from "./useGestureCapture";
 import useSpeechRecognition from "./useSpeechRecognition";
 import useTextToSpeech from "./useTextToSpeech";
+import { API_BASE_URL } from "./Config";
 
 function formatTime(seconds) {
   const h = Math.floor(seconds / 3600);
@@ -130,7 +131,7 @@ export default function OngoingInterview({
       formData.append("response_time_seconds", responseTime.toFixed(2));
       formData.append("gesture_data", JSON.stringify(gestureData));
 
-      const res = await fetch("https://innovahack-spookies.onrender.com", {
+      const res = await fetch(`${API_BASE_URL}/agent_reply`, {
         method: "POST",
         body: formData,
       });
